@@ -1,0 +1,283 @@
+#include <bits/stdc++.h>
+using namespace std;
+
+// Fast I/O
+#define FAST_IO ios_base::sync_with_stdio(false); cin.tie(NULL); cout.tie(NULL)
+
+// Common shortcuts
+#define ll long long
+#define ull unsigned long long
+#define ld long double
+#define pii pair<int, int>
+#define pll pair<ll, ll>
+#define vi vector<int>
+#define vll vector<ll>
+#define vpii vector<pii>
+#define vpll vector<pll>
+#define vs vector<string>
+#define vb vector<bool>
+
+// Useful macros
+#define all(x) (x).begin(), (x).end()
+#define rall(x) (x).rbegin(), (x).rend()
+#define pb push_back
+#define mp make_pair
+#define fi first
+#define se second
+#define sz(x) (int)(x).size()
+
+// Loop macros
+#define rep(i, a, b) for(int i = a; i < b; i++)
+#define per(i, a, b) for(int i = a; i >= b; i--)
+#define trav(a, x) for(auto& a : x)
+
+// Debug macro
+#ifdef LOCAL
+    #define debug(x...) cerr << "[" << #x << "] = ["; _print(x)
+#else
+    #define debug(x...)
+#endif
+
+// Constants
+const int MOD = 1e9 + 7;
+const int MOD2 = 998244353;
+const int INF = 1e9;
+const ll LINF = 1e18;
+const ld EPS = 1e-9;
+const ld PI = acos(-1);
+
+// Directions (4-directional)
+int dx[] = {-1, 1, 0, 0};
+int dy[] = {0, 0, -1, 1};
+
+// Directions (8-directional)
+int dx8[] = {-1, -1, -1, 0, 0, 1, 1, 1};
+int dy8[] = {-1, 0, 1, -1, 1, -1, 0, 1};
+
+// Utility functions
+template<typename T>
+void _print(T t) { cerr << t << "]" << endl; }
+
+template<typename T, typename... Args>
+void _print(T t, Args... args) { cerr << t << ", "; _print(args...); }
+
+ll gcd(ll a, ll b) { return b ? gcd(b, a % b) : a; }
+ll lcm(ll a, ll b) { return a / gcd(a, b) * b; }
+
+ll power(ll a, ll b, ll mod = MOD) {
+    ll res = 1;
+    a %= mod;
+    while (b > 0) {
+        if (b & 1) res = res * a % mod;
+        a = a * a % mod;
+        b >>= 1;
+    }
+    return res;
+}
+
+ll modInverse(ll a, ll mod = MOD) {
+    return power(a, mod - 2, mod);
+}
+
+// Check if point is inside bounds
+bool isValid(int x, int y, int n, int m) {
+    return x >= 0 && x < n && y >= 0 && y < m;
+}
+
+// String to integer conversion
+int toInt(string s) {
+    int res = 0;
+    for (char c : s) res = res * 10 + (c - '0');
+    return res;
+}
+
+// Integer to string conversion
+string toString(ll n) {
+    if (n == 0) return "0";
+    string s = "";
+    while (n > 0) {
+        s = char('0' + n % 10) + s;
+        n /= 10;
+    }
+    return s;
+}
+
+// Binary search template
+template<typename T>
+ll binarySearch(ll l, ll r, T check) {
+    while (l < r) {
+        ll mid = l + (r - l) / 2;
+        if (check(mid)) r = mid;
+        else l = mid + 1;
+    }
+    return l;
+}
+
+// Prefix sum template
+template<typename T>
+vector<T> prefixSum(vector<T>& arr) {
+    int n = sz(arr);
+    vector<T> prefix(n + 1, 0);
+    rep(i, 0, n) prefix[i + 1] = prefix[i] + arr[i];
+    return prefix;
+}
+
+// Segment Tree template (basic)
+struct Node {
+    int sum, prefix, suffix, best;
+};
+
+struct SegTree {
+    int n;
+    vector<Node> tree;
+
+    SegTree(vector<int>& arr) {
+        n = arr.size();
+        tree.resize(4 * n);
+        build(arr, 1, 0, n - 1);
+    }
+
+    Node combine(Node L, Node R) {
+        Node res;
+        res.sum = L.sum + R.sum;
+        res.prefix = max(L.prefix, L.sum + R.prefix);
+        res.suffix = max(R.suffix, R.sum + L.suffix);
+        res.best = max({L.best, R.best, L.suffix + R.prefix});
+        return res;
+    }
+
+    Node make(int val) {
+        return {val, val, val, val};
+    }
+
+    void update(int node, int start, int end, int idx, int val) {
+        if (start == end) {
+            tree[node] = make(val);
+        } else {
+            int mid = (start + end) / 2;
+            if (idx <= mid) update(2 * node, start, mid, idx, val);
+            else update(2 * node + 1, mid + 1, end, idx, val);
+            tree[node] = combine(tree[2 * node], tree[2 * node + 1]);
+        }
+    }
+
+    void update(int idx, int new_val) {
+        update(1, 0, n - 1, idx, new_val);
+    }
+
+    void build(vector<int>& arr, int node, int start, int end) {
+        if (start == end) tree[node] = make(arr[start]);
+        else {
+            int mid = (start + end) / 2;
+            build(arr, 2 * node, start, mid);
+            build(arr, 2 * node + 1, mid + 1, end);
+            tree[node] = combine(tree[2 * node], tree[2 * node + 1]);
+        }
+    }
+
+    Node neutral() {
+        return {0, INT_MIN / 2, INT_MIN / 2, INT_MIN / 2};
+    }
+
+    Node query(int node, int start, int end, int l, int r) {
+        if (r < start || end < l) 
+            return neutral();
+        if (l <= start && end <= r) 
+            return tree[node];
+        int mid = (start + end) / 2;
+        Node L = query(2 * node, start, mid, l, r);
+        Node R = query(2 * node + 1, mid + 1, end, l, r);
+        if (L.best == INT_MIN / 2) return R;   // left empty
+        if (R.best == INT_MIN / 2) return L;   // right empty
+        return combine(L, R);
+    }
+
+    int query(int l, int r) {
+        return query(1, 0, n - 1, l, r).best;
+    }
+};
+
+struct _t {
+    int k, s, t, idx;
+};
+
+void solve() {
+    int n, m;
+    cin >> n >> m;
+
+    vi l(m), r(m), x(m), b(m);
+
+    for (int i =0 ; i < m; ++ i) {
+    	cin >> l[i] >> r[i] >> x[i];
+    }    
+
+    // initiate b and seg for k == 1
+
+    int k = 1;
+
+    for (int i = 0; i < m; ++i) {
+        if (l[i] <= k && k <= r[i]) {
+            b[i] = x[i];
+        } else {
+            b[i] = 0;
+        }
+    }
+
+    SegTree seg(b);
+
+    int q;
+    cin >> q;
+    vector<_t> queries(q);
+    vi answer(q);
+
+    for (int i = 0; i < q; ++i) {
+        cin >> queries[i].k >> queries[i].s >> queries[i].t;
+        queries[i].idx = i;
+    }
+
+    sort(all(queries), [] (const _t &a, const _t & b) {
+        return a.k < b.k;
+    });
+
+    for (auto &qry : queries) {
+        int current_k = qry.k;
+
+        while (k < current_k) {
+            k++;
+
+            for (int j = 0; j < m; ++j) {
+                if (l[j] == k) {
+                    seg.update(j, x[j]);
+                }
+
+                if (r[j] == k - 1) {
+                    seg.update(j, 0);
+                }
+            }
+        }
+
+        answer[qry.idx] = seg.query(qry.s - 1, qry.t - 1);
+    }
+
+    for (int i = 0; i < q; ++i) {
+        cout << answer[i] << '\n';
+    }
+}
+
+int main() {
+    FAST_IO;
+    
+    ll t = 1;
+    // cin >> t;
+    
+    while (t--) {
+        solve();
+
+        // if (solve())
+        // printf("Yes\n");
+        // else 
+        // printf("No\n");
+    }
+    
+    return 0;
+}

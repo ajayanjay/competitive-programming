@@ -1,0 +1,11 @@
+*.png
+*.pdf
+.clangd
+*.exe
+.vscode/
+build/
+.cache/
+*.out
+
+
+!.cpp
